@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import sample.Models.Coord;
 import sample.Models.Direction;
 import sample.Models.GameState;
+import sample.Models.Player;
 import sample.logic.GameController;
 
 import java.io.BufferedReader;
@@ -42,6 +43,18 @@ public class Main extends Application {
             System.out.println("MOVE");
             gameState = service.getNextState(gameState);
             printSnake(gameState.getSnake());
+
+            ArrayList<Player> players = new ArrayList<>();
+            players.add(new Player("Bob", 1));
+            players.add(new Player("Tom", 2));
+            players.add(new Player("Tom", 2));
+
+            ArrayList<Player> players2 = new ArrayList<>();
+            players2 = service.getLeaderBoard();
+            service.saveLeaderBoard(players);
+            players2 = service.getLeaderBoard();
+            printPlayers(players2);
+
             consoleReader.close();
         } catch (Exception e) {
             System.out.println("Something went wrong on client side");
@@ -65,5 +78,12 @@ public class Main extends Application {
             System.out.println(snake.get(i).getY());
         }
         System.out.println();
+    }
+
+    private static void printPlayers(ArrayList<Player> players) {
+        System.out.println("players");
+        for (Player player: players) {
+            System.out.println(player.getName() + " " + player.getScore());
+        }
     }
 }

@@ -4,6 +4,7 @@ import sample.Models.Coord;
 import sample.Models.GameState;
 import sample.Models.Player;
 
+import java.io.*;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Random;
@@ -58,7 +59,24 @@ public class GameControllerImpl implements GameController {
                 currentState.getFood().getY() == currentState.getSnake().get(0).getY()) {
 
             ArrayList<Coord> newSnake =  currentState.getSnake();
-            newSnake.add(new Coord(-1, -1));
+            int blockX = newSnake.get(newSnake.size() -1).getX();
+            int blockY = newSnake.get(newSnake.size() -1).getY();
+            switch (currentState.getDirection()) {
+                case up:
+                    blockY--;
+                    break;
+                case down:
+                    blockY++;
+                    break;
+                case left:
+                    blockX--;
+                    break;
+                case right:
+                    blockX++;
+                    break;
+
+            }
+            newSnake.add(new Coord(blockX, blockY));
             currentState.setSnake(newSnake);
             currentState.setFood(getFood(currentState.getSnake(), currentState.getFieldWidth(), currentState.getFieldHeight()));
             currentState.setScore(currentState.getScore() + 1);
@@ -85,12 +103,52 @@ public class GameControllerImpl implements GameController {
 
     @Override
     public ArrayList<Player> getLeaderBoard() throws RemoteException {
-        return null;
+        String filename = "leaderboard.bin";
+        ArrayList<Player> players = new ArrayList<Player>();
+        File leaderboard = new File(filename);
+        if (!leaderboard.exists()) {
+            try {
+                leaderboard.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename)))
+        {
+
+            players = (ArrayList<Player>)ois.readObject();
+        }
+        catch(Exception ex){
+
+            System.out.println(ex.getMessage());
+        }
+        return players;
     }
 
     @Override
     public void saveLeaderBoard(ArrayList<Player> players) throws RemoteException {
+        String filename = "leaderboard.bin";
 
+        File leaderboard = new File(filename);
+        if (leaderboard.exists()) {
+            leaderboard.delete();
+        }
+
+        try {
+            leaderboard.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename)))
+        {
+            oos.writeObject(players);
+            System.out.println("File has been written");
+        }
+        catch(Exception ex){
+            System.out.println(ex.getMessage());
+        }
     }
 
     private Coord getFood(ArrayList<Coord> snake, int width, int height) {
