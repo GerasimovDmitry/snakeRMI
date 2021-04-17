@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class GameState implements Serializable {
+    public boolean isExit;
     private ArrayList<Coord> snake;
     private Coord food;
     private Direction direction;

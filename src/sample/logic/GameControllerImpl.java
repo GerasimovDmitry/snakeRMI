@@ -3,6 +3,7 @@ package sample.logic;
 import sample.Models.Coord;
 import sample.Models.GameState;
 import sample.Models.Player;
+import sample.ModelsUI.StepParams;
 
 import java.io.*;
 import java.rmi.RemoteException;
@@ -14,77 +15,128 @@ public class GameControllerImpl implements GameController {
     private static Random rand = new Random();
     @Override
     public GameState getNextState(GameState currentState) throws RemoteException {
+
+        if (currentState.isExit) {
+            currentState.setGameOver(true);
+            return currentState;
+        }
+
+
+        int y, x;
+        y = currentState.getSnake().get(0).getY();
+        x = currentState.getSnake().get(0).getX();
         for (int i = currentState.getSnake().size() - 1; i >= 1; i--) {
             currentState.getSnake().get(i).setX(currentState.getSnake().get(i - 1).getX());
             currentState.getSnake().get(i).setY(currentState.getSnake().get(i - 1).getY());
         }
-        int y, x;
-        y = currentState.getSnake().get(0).getY();
-        x = currentState.getSnake().get(0).getX();
 
         switch (currentState.getDirection()) {
             case up:
-                y--;
+                if (!(currentState.getSnake().get(1).getX() == x && y == currentState.getSnake().get(1).getY() - 1)) {
+                    y--;
+                }
+                else {
+                    y++;
+                }
                 currentState.getSnake().get(0).setY(y);
                 if (currentState.getSnake().get(0).getY() < 0) {
-                    currentState.setGameOver(true); //or set y = fieldHeight
+                    if (currentState.getLvl() == 3) {
+                        currentState.setGameOver(true); //or set y = fieldHeight
+                    }
+                    else {
+                        y = currentState.getFieldHeight();
+                        currentState.getSnake().get(0).setY(y);
+                    }
                 }
                 break;
             case down:
-                y++;
+                if (!(currentState.getSnake().get(1).getX() == x && y == currentState.getSnake().get(1).getY() + 1)) {
+                    y++;
+                }
+                else {
+                    y--;
+                }
                 currentState.getSnake().get(0).setY(y);
-                if (currentState.getSnake().get(0).getY() > currentState.getFieldHeight()) {
-                    currentState.setGameOver(true); //or set y = 0
+                if (currentState.getSnake().get(0).getY() >= currentState.getFieldHeight()) {
+                    if (currentState.getLvl() == 3) {
+                        currentState.setGameOver(true); //or set y = 0
+                    }
+                    else {
+                        y = 0;
+                        currentState.getSnake().get(0).setY(y);
+                    }
                 }
                 break;
             case left:
-                x--;
+                if (!(currentState.getSnake().get(1).getX() - 1 == x && y == currentState.getSnake().get(1).getY())) {
+                    x--;
+                }
+                else {
+                    x++;
+                }
                 currentState.getSnake().get(0).setX(x);
                 if (currentState.getSnake().get(0).getX() < 0) {
-                    currentState.setGameOver(true); //or set x = fieldWidth;
+                    if (currentState.getLvl() == 3) {
+                        currentState.setGameOver(true); //or set x = fieldWidth;
+                    }
+                    else {
+                        x = currentState.getFieldWidth();
+                        currentState.getSnake().get(0).setX(x);
+                    }
                 }
                 break;
             case right:
-                x++;
+                if (!(currentState.getSnake().get(1).getX() + 1 == x && y == currentState.getSnake().get(1).getY())) {
+                    x++;
+                }
+                else {
+                    x--;
+                }
                 currentState.getSnake().get(0).setX(x);
-                if (currentState.getSnake().get(0).getX() > currentState.getFieldWidth()) {
-                    currentState.setGameOver(true);  //or set x = 0;
+                if (currentState.getSnake().get(0).getX() >= currentState.getFieldWidth()) {
+                    if (currentState.getLvl() == 3) {
+                        currentState.setGameOver(true);  //or set x = 0;
+                    }
+                    else {
+                        x = 0;
+                        currentState.getSnake().get(0).setX(x);
+                    }
                 }
                 break;
-
         }
-
         // eat food
         if (currentState.getFood().getX() == currentState.getSnake().get(0).getX() &&
                 currentState.getFood().getY() == currentState.getSnake().get(0).getY()) {
 
             ArrayList<Coord> newSnake =  currentState.getSnake();
-            int blockX = newSnake.get(newSnake.size() -1).getX();
-            int blockY = newSnake.get(newSnake.size() -1).getY();
-            switch (currentState.getDirection()) {
-                case up:
-                    blockY--;
-                    break;
-                case down:
-                    blockY++;
-                    break;
-                case left:
-                    blockX--;
-                    break;
-                case right:
-                    blockX++;
-                    break;
+            for (int i = 0; i < currentState.getLvl() * 2 - 1; i++) {
+                int blockX = newSnake.get(newSnake.size() - 1).getX();
+                int blockY = newSnake.get(newSnake.size() - 1).getY();
+                switch (currentState.getDirection()) {
+                    case up:
+                        blockY++;
+                        break;
+                    case down:
+                        blockY--;
+                        break;
+                    case left:
+                        blockX++;
+                        break;
+                    case right:
+                        blockX--;
+                        break;
 
+                }
+                newSnake.add(new Coord(blockX, blockY));
             }
-            newSnake.add(new Coord(blockX, blockY));
             currentState.setSnake(newSnake);
             currentState.setFood(getFood(currentState.getSnake(), currentState.getFieldWidth(), currentState.getFieldHeight()));
-            currentState.setScore(currentState.getScore() + 1);
+            currentState.setScore(currentState.getScore() + currentState.getLvl());
             currentState.setSpeed(currentState.getSpeed() + currentState.getLvl());
         }
 
         // self destroy
-        for (int i = 1; i < currentState.getSnake().size(); i++) {
+        for (int i = 1; i <= currentState.getSnake().size() - 1; i++) {
             if (currentState.getSnake().get(0).getX() == currentState.getSnake().get(i).getX() && currentState.getSnake().get(0).getY() == currentState.getSnake().get(i).getY()) {
                 currentState.setGameOver(true);
             }
